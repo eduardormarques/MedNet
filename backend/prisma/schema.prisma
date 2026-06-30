@@ -1,0 +1,95 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                    Int            @id @default(autoincrement())
+  email                 String         @unique
+  name                  String
+  passwordHash          String
+  role                  String         // "CUSTOMER", "PHARMACIST", "ADMIN", "DRIVER"
+  phone                 String
+  address               String
+  createdAt             DateTime       @default(now())
+  
+  // Relations
+  prescriptions         Prescription[] @relation("PatientPrescriptions")
+  validatedPrescriptions Prescription[] @relation("PharmacistValidations")
+  orders                Order[]        @relation("CustomerOrders")
+  driverOrders          Order[]        @relation("DriverOrders")
+}
+
+model Pharmacy {
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String
+  phone     String
+  products  Product[]
+}
+
+model Product {
+  id                   Int         @id @default(autoincrement())
+  name                 String
+  activeIngredient     String
+  description          String
+  category             String      // "Prescription Drugs", "OTC Medicines", "Cosmetics", "Medical Equipment"
+  price                Float
+  stockQuantity        Int
+  sku                  String      @unique
+  requiresPrescription Boolean
+  expirationDate       DateTime
+  
+  // Relations
+  pharmacyId           Int
+  pharmacy             Pharmacy    @relation(fields: [pharmacyId], references: [id])
+  orderItems           OrderItem[]
+}
+
+model Prescription {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation("PatientPrescriptions", fields: [userId], references: [id])
+  imageUrl      String
+  status        String   // "PENDING", "APPROVED", "REJECTED"
+  validatedById Int?
+  validatedBy   User?    @relation("PharmacistValidations", fields: [validatedById], references: [id])
+  notes         String?
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  orders        Order[]
+}
+
+model Order {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  user           User         @relation("CustomerOrders", fields: [userId], references: [id])
+  totalPrice     Float
+  deliveryFee    Float
+  paymentStatus  String       // "PENDING", "PAID", "FAILED"
+  orderStatus    String       // "PENDING", "APPROVED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"
+  driverId       Int?
+  driver         User?        @relation("DriverOrders", fields: [driverId], references: [id])
+  prescriptionId Int?
+  prescription   Prescription? @relation(fields: [prescriptionId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  
+  // Relations
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id              Int     @id @default(autoincrement())
+  orderId         Int
+  order           Order   @relation(fields: [orderId], references: [id])
+  productId       Int
+  product         Product @relation(fields: [productId], references: [id])
+  quantity        Int
+  priceAtPurchase Float
+}
