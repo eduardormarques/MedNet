@@ -17,7 +17,7 @@ import {
   LogOut
 } from 'lucide-react';
 
-const API_BASE = 'https://mednet-n9s7.onrender.com/';
+const API_BASE = 'https://onrender.com';
 
 interface Pharmacy {
   id: number;
